@@ -22,6 +22,7 @@ const ChatSection = ({ bookId, onClose }) => {
   const [toast, setToast] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
   
   const clearKey = `chat_clear_${bookId}_${user?.id}`;
   const clearTime = localStorage.getItem(clearKey) ? parseInt(localStorage.getItem(clearKey)) : 0;
@@ -250,7 +251,7 @@ const ChatSection = ({ bookId, onClose }) => {
           {/* Bubble Core */}
           <div className="flex flex-col relative w-full px-1">
             <div 
-              className={`p-3 rounded-2xl relative shadow-sm ${isMe ? "rounded-br-sm" : "rounded-bl-sm"}`}
+              className={`p-2.5 rounded-2xl relative shadow-sm ${isMe ? "rounded-br-sm" : "rounded-bl-sm"}`}
               style={{
                   background: isMe ? "var(--primary)" : "var(--surface)",
                   color: isMe ? "var(--text-muted)" : "var(--text-primary)",
@@ -261,7 +262,8 @@ const ChatSection = ({ bookId, onClose }) => {
                 <img 
                   src={msg.media_url} 
                   alt="Attachment" 
-                  className="w-full max-w-[200px] rounded-lg mb-2 object-cover border" 
+                  onClick={() => setFullscreenImage(msg.media_url)}
+                  className="w-full max-w-[200px] rounded-lg mb-1 object-cover border cursor-pointer hover:opacity-90 transition-opacity" 
                   style={{maxHeight: '200px', borderColor: "var(--border)"}}
                 />
               )}
@@ -274,7 +276,7 @@ const ChatSection = ({ bookId, onClose }) => {
               
               {/* Reactions Display (Anchored to Bubble) */}
               {msg.reactions && msg.reactions.length > 0 && (
-                  <div className={`absolute -bottom-3 ${isMe ? "left-4" : "right-4"} rounded-full px-1.5 py-0.5 shadow-sm text-xs z-20 flex bg-(--surface) text-(--secondary) border border-(--border)`}>
+                  <div className={`absolute -bottom-3 ${isMe ? "left-4" : "right-4"} rounded-full px-1.5 py-0.5 shadow-sm text-xs z-10 flex bg-(--surface) text-(--secondary) border border-(--border)`}>
                       {msg.reactions.map((r, i) => <span key={i} className="mx-px">{r.emoji}</span>)}
                   </div>
               )}
@@ -299,7 +301,7 @@ const ChatSection = ({ bookId, onClose }) => {
                       </button>
                       
                       {activeReactMsg === msg.id && (
-                          <div className="absolute bottom-full -left-20 mb-2 shadow-lg rounded-full px-2 py-1.5 flex gap-2 z-50 bg-(--surface) border-(--border)">
+                          <div className="absolute bottom-full -left-24 mb-2 shadow-lg rounded-full px-2 py-1.5 flex gap-2 z-50 bg-(--surface) border-(--border)">
                               {EMOJIS.map(emoji => (
                                   <span key={emoji} onClick={() => reactMessage(msg.id, emoji)} className="cursor-pointer hover:scale-125 transition-transform text-lg">{emoji}</span>
                               ))}
@@ -314,7 +316,7 @@ const ChatSection = ({ bookId, onClose }) => {
                   </button>
                   
                   {optionsMenu === msg.id && (
-                      <div className={`absolute bottom-full ${isMe ? 'right-0' : 'left-0'} mb-2 shadow-xl rounded-xl py-1 z-50 w-28 bg-(--surface) border-(--border) overflow-hidden`}>
+                      <div className={`absolute bottom-full ${isMe ? '-right-12' : 'left-0'} mb-2 shadow-xl rounded-xl py-1 z-100 w-28 bg-(--surface) border-(--border) overflow-hidden`}>
                           <button onClick={() => copyText(msg.content)} className="w-full text-left px-3 py-2 text-xs hover:opacity-75 transition-colors flex items-center gap-2 text-(--text-primary)"><Copy size={12}/> Copy</button>
                           {isMe && <button onClick={() => unsendMessage(msg.id)} className="w-full text-left px-3 py-2 text-xs transition-colors flex items-center gap-2 text-(--danger) hover:bg-(--danger) hover:bg-opacity-10"><Trash2 size={12}/> Unsend</button>}
                       </div>
@@ -377,7 +379,7 @@ const ChatSection = ({ bookId, onClose }) => {
 
               <div 
                 onClick={() => !confirmDeleteGlobal && setConfirmDeleteGlobal(true)}
-                className="w-full py-3 px-4 rounded-xl border border-red-500/30 transition-colors hover:bg-(--danger) hover:bg-opacity-10 flex flex-col justify-center cursor-pointer"
+                className="w-full py-3 px-4 rounded-xl border border-red-500/30 transition-colors hover:bg-(--surface-alt) hover:bg-opacity-10 flex flex-col justify-center cursor-pointer"
               >
                 <div className="flex items-center justify-between w-full mb-1">
                   <span className="text-(--danger) font-medium">Delete My Chats Globally</span>
@@ -575,6 +577,30 @@ const ChatSection = ({ bookId, onClose }) => {
             </div>
         </div>
       </div>
+      {fullscreenImage && (
+        <div 
+          className="fixed inset-0 z-120 flex flex-col items-center justify-center bg-black/90 p-4 md:p-10 animate-in fade-in duration-200"
+          onClick={() => setFullscreenImage(null)}
+        >
+          <div className="flex-1 w-full flex items-center justify-center p-4">
+            <img 
+              src={fullscreenImage} 
+              alt="Fullscreen Preview" 
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          
+          <button 
+            onClick={() => setFullscreenImage(null)}
+            className="mt-4 px-8 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all backdrop-blur-md flex items-center gap-2 border border-white/20"
+          >
+            <X size={18} />
+            Close
+          </button>
+        </div>
+      )}
+
       {toast && (
         <Toast 
           message={toast.message} 
