@@ -9,7 +9,7 @@ class Message(models.Model):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     content = models.TextField(blank=True)
-    media_url = models.URLField(blank=True)
+    media_url = models.TextField(blank=True, null=True)
 
     is_delivered = models.BooleanField(default=False)
     is_seen = models.BooleanField(default=False)

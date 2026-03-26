@@ -250,7 +250,7 @@ const AuthPage = () => {
             type="submit"
             disabled={loading}
             className="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200 hover:opacity-85 active:scale-95 disabled:opacity-50 mt-2"
-            style={{ background: 'var(--primary)', color: 'var(--background)' }}
+            style={{ background: 'var(--primary)', color: 'var(--text-primary)' }}
           >
             {loading ? (isRegister ? 'Creating...' : 'Signing in...') : isRegister ? 'Create Account' : 'Sign In'}
           </button>

@@ -21,6 +21,7 @@ const ChatSection = ({ bookId, onClose }) => {
   const [confirmDeleteGlobal, setConfirmDeleteGlobal] = useState(false);
   const [toast, setToast] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   
   const clearKey = `chat_clear_${bookId}_${user?.id}`;
   const clearTime = localStorage.getItem(clearKey) ? parseInt(localStorage.getItem(clearKey)) : 0;
@@ -147,8 +148,9 @@ const ChatSection = ({ bookId, onClose }) => {
     if (file) setSelectedImage(file);
   };
 
-  const sendMessage = async () => {
-    if (!input.trim() && !selectedImage) return;
+   const sendMessage = async () => {
+    if ((!input.trim() && !selectedImage) || isSending) return;
+    setIsSending(true);
 
     const doSend = (finalMediaUrl) => {
         if (socket && socket.readyState === WebSocket.OPEN && user) {
@@ -159,8 +161,9 @@ const ChatSection = ({ bookId, onClose }) => {
             media_url: finalMediaUrl
           }));
         }
-        setInput("");
+         setInput("");
         setSelectedImage(null);
+        setIsSending(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
@@ -194,7 +197,7 @@ const ChatSection = ({ bookId, onClose }) => {
             img.src = e.target.result;
         };
         reader.readAsDataURL(selectedImage);
-    } else {
+     } else {
         doSend(null);
     }
   };
@@ -296,7 +299,7 @@ const ChatSection = ({ bookId, onClose }) => {
                       </button>
                       
                       {activeReactMsg === msg.id && (
-                          <div className="absolute bottom-full -left-12 mb-2 shadow-lg rounded-full px-2 py-1.5 flex gap-2 z-50 bg-(--surface) border-(--border)">
+                          <div className="absolute bottom-full -left-20 mb-2 shadow-lg rounded-full px-2 py-1.5 flex gap-2 z-50 bg-(--surface) border-(--border)">
                               {EMOJIS.map(emoji => (
                                   <span key={emoji} onClick={() => reactMessage(msg.id, emoji)} className="cursor-pointer hover:scale-125 transition-transform text-lg">{emoji}</span>
                               ))}
@@ -503,49 +506,71 @@ const ChatSection = ({ bookId, onClose }) => {
             <div ref={messagesEndRef} className="pb-2" />
         </div>
 
-        {/* Input Area */}
-        <div className="flex flex-col shrink-0 pb-safe border-t border-(--border) bg-(--surface) text-(--text-primary) relative z-20">
+           <div className="flex flex-col shrink-0 pb-safe border-t border-(--border) bg-(--surface) text-(--text-primary) relative z-20">
             {selectedImage && (
                 <div className="px-4 pt-3 flex items-start">
                     <div className="relative border rounded-lg shadow-sm border-[var(--border)]">
-                        <img src={URL.createObjectURL(selectedImage)} alt="preview" className="w-16 h-16 object-cover rounded-lg" />
-                        <button onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-[var(--danger)] text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-md">×</button>
+                        <img src={URL.createObjectURL(selectedImage)} alt="Preview" className="w-16 h-16 object-cover rounded-md" />
+                        <button 
+                            disabled={isSending}
+                            onClick={() => {
+                                setSelectedImage(null);
+                                if (fileInputRef.current) fileInputRef.current.value = "";
+                            }} 
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 shadow-md hover:bg-red-600 disabled:opacity-50"
+                        >
+                            <X size={12} />
+                        </button>
                     </div>
                 </div>
             )}
 
             <div className="flex items-center p-3 gap-2">
-                <input type="file" accept="image/*" hidden ref={fileInputRef} onChange={handleFileChange} />
-                
-                <button onClick={handleUpload} className="p-2 transition-colors rounded-full hover:opacity-75 shrink-0 opacity-80" style={{ color: "var(--text-primary)" }}>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={handleFileChange} 
+                />
+                <button 
+                  disabled={isSending}
+                  onClick={handleUpload} 
+                  className="p-2 rounded-xl transition-all hover:bg-(--surface-alt) text-(--text-muted) hover:text-(--secondary) disabled:opacity-50"
+                >
                     <Plus size={22} />
                 </button>
 
                 <div className="flex-1 min-w-0 flex items-center rounded-2xl px-4 py-2 border bg-(--surface-alt) border-(--border) shadow-inner">
                     <input
+                        disabled={isSending}
                         value={input}
                         onChange={(e) => {
                             setInput(e.target.value);
                             sendTyping();
                         }}
-                        onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                        placeholder="Type your notes..."
-                        className="w-full bg-transparent border-none outline-none text-sm placeholder:opacity-60"
-                        style={{ color: "var(--text-primary)" }}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                sendMessage();
+                            }
+                        }}
+                        placeholder={isSending ? "Uploading image..." : "Write a message..."}
+                        className="w-full bg-transparent text-sm focus:outline-none py-1"
                     />
                 </div>
 
                 <button 
+                    disabled={(!input.trim() && !selectedImage) || isSending}
                     onClick={sendMessage}
-                    disabled={!input.trim() && !selectedImage}
-                    className="p-2.5 rounded-full transition-all flex items-center justify-center shrink-0 disabled:opacity-40 shadow-sm"
-                    style={{ 
-                        background: (!input.trim() && !selectedImage) ? "var(--surface-alt)" : "var(--primary)",
-                        color: (!input.trim() && !selectedImage) ? "var(--text-muted)" : "var(--background)",
-                        cursor: (!input.trim() && !selectedImage) ? "not-allowed" : "pointer"
-                    }}
+                    className="p-2.5 rounded-xl transition-all shadow-md active:scale-90 flex items-center justify-center disabled:opacity-50"
+                    style={{ background: "var(--primary)", color: "var(--background)" }}
                 >
-                    <Send size={18} />
+                    {isSending ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                        <Send size={20} />
+                    )}
                 </button>
             </div>
         </div>
