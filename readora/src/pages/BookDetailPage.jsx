@@ -11,9 +11,11 @@ import {
   Calendar,
   Maximize,
   PenLine,
+  Database,
 } from "lucide-react";
 import { getBooks, getBook, toggleBookmark, verifyPassword } from "../api/books";
 import { useAuth } from "../context/AuthContext";
+import { useAssetCache } from "../hooks/useAssetCache";
 import PromoCodeModal from "../components/PromoCodeModal";
 import ChatSection from "../components/ChatSection";
 import PlatformFooter from "../components/PlatformFooter";
@@ -32,6 +34,9 @@ const BookDetailPage = () => {
   const [pdfLoadFailed, setPdfLoadFailed] = useState(false);
   const [toast, setToast] = useState(null);
   const [moreBooks, setMoreBooks] = useState([]);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
+  const [isFromCache, setIsFromCache] = useState(false);
+  const { getCachedPdf, cachePdf } = useAssetCache();
   const pdfContainerRef = useRef(null);
 
   const enterFullScreen = async () => {
@@ -51,9 +56,23 @@ const BookDetailPage = () => {
   useEffect(() => {
     setLoading(true);
     getBook(id)
-      .then((res) => {
-        setBook(res.data);
-        setBookmarked(res.data.is_bookmarked || false);
+      .then(async (res) => {
+        const bookData = res.data;
+        setBook(bookData);
+        setBookmarked(bookData.is_bookmarked || false);
+        
+        // Try to load PDF from cache
+        if (bookData.pdf_url) {
+          const cachedUrl = await getCachedPdf(bookData.pdf_url);
+          if (cachedUrl) {
+            setPdfBlobUrl(cachedUrl);
+            setIsFromCache(true);
+          } else {
+            // Load fresh and cache for future
+            const newUrl = await cachePdf(bookData.pdf_url);
+            if (newUrl) setPdfBlobUrl(newUrl);
+          }
+        }
       })
       .catch(() => navigate("/dashboard"))
       .finally(() => setLoading(false));
@@ -65,7 +84,7 @@ const BookDetailPage = () => {
         setMoreBooks(others.slice(0, 4)); // Get up to 4 other books
       })
       .catch(err => console.error("Failed to fetch more books", err));
-  }, [id, navigate]);
+  }, [id, navigate, getCachedPdf, cachePdf]);
 
   const handleBookmark = async () => {
     try {
@@ -295,6 +314,12 @@ const BookDetailPage = () => {
                 >
                   Read Book
                 </span>
+                {isFromCache && (
+                  <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-tighter px-1.5 py-0.5 rounded-md" style={{ background: "var(--secondary)", color: "var(--background)", opacity: 0.8 }}>
+                    <Database size={10} />
+                    Cached
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -338,7 +363,7 @@ const BookDetailPage = () => {
               }}
             >
               <object
-                data={book.pdf_url}
+                data={pdfBlobUrl || book.pdf_url}
                 type="application/pdf"
                 width="100%"
                 height="100%"
@@ -427,7 +452,7 @@ const BookDetailPage = () => {
                   className="flex flex-col gap-2 cursor-pointer group"
                 >
                   <div 
-                    className="aspect-[2/3] rounded-xl overflow-hidden shadow-sm border border-[var(--border)] transition-transform group-hover:-translate-y-1"
+                   className="aspect-2/3 rounded-xl overflow-hidden shadow-2xl border-[var(--border)] transition-transform group-hover:-translate-y-1"
                     style={{ background: "var(--surface)" }}
                   >
                     {b.cover_image_url ? (

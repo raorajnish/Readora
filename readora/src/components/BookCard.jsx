@@ -1,12 +1,29 @@
 import { Bookmark, BookmarkCheck } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toggleBookmark } from '../api/books';
 import { useAuth } from '../context/AuthContext';
+import { useAssetCache } from '../hooks/useAssetCache';
 
 const BookCard = ({ book, onClick, onBookmarkChange }) => {
   const { user } = useAuth();
   const [bookmarked, setBookmarked] = useState(book.is_bookmarked || false);
   const [bookmarking, setBookmarking] = useState(false);
+  const [coverUrl, setCoverUrl] = useState(book.cover_image_url);
+  const { getCachedPdf, cachePdf } = useAssetCache();
+
+  useEffect(() => {
+    if (book.cover_image_url) {
+      getCachedPdf(book.cover_image_url).then((cached) => {
+        if (cached) {
+          setCoverUrl(cached);
+        } else {
+          cachePdf(book.cover_image_url).then((newUrl) => {
+            if (newUrl) setCoverUrl(newUrl);
+          });
+        }
+      });
+    }
+  }, [book.cover_image_url, getCachedPdf, cachePdf]);
 
   const handleBookmark = async (e) => {
     e.stopPropagation();
@@ -38,9 +55,9 @@ const BookCard = ({ book, onClick, onBookmarkChange }) => {
         className="h-44 w-full overflow-hidden relative"
         style={{ background: 'var(--primary)' }}
       >
-        {book.cover_image_url ? (
+        {coverUrl ? (
           <img
-            src={book.cover_image_url}
+            src={coverUrl}
             alt={book.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />

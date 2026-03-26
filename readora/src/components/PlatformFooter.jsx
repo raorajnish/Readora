@@ -11,7 +11,7 @@ const PlatformFooter = () => {
     >
       {/* Subtle glass effect element */}
       <div 
-        className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[var(--primary)] to-transparent opacity-20"
+        className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-(--primary) to-transparent opacity-20"
       />
       
       <div className="flex flex-col items-center gap-4 relative z-10">
@@ -38,8 +38,7 @@ const PlatformFooter = () => {
         </div>
         
         <div 
-          className="h-px w-16" 
-          style={{ background: "linear-gradient(90deg, transparent, var(--border), transparent)" }}
+          className="h-px w-16 bg-linear-to-r from-transparent via-(--border) to-transparent" 
         />
         
         <p 
@@ -49,7 +48,7 @@ const PlatformFooter = () => {
           Discover stories that move you and organize your literary journey in a space designed for deep focus.
         </p>
         
-        <div className="mt-6 pt-6 border-t border-[var(--border)] w-full opacity-40">
+        <div className="pt-8 border-t border-(--border) flex flex-col md:flex-row justify-between items-center gap-4 w-full opacity-40">
            <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
             © {new Date().getFullYear()} Readora Platform. All rights reserved.
           </p>

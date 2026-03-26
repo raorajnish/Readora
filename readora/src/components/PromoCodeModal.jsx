@@ -105,7 +105,7 @@ const PromoCodeModal = ({
             type="submit"
             disabled={loading || !code.trim()}
             className="w-full py-3 rounded-xl text-sm font-semibold transition-all duration-200 hover:opacity-85 active:scale-95 disabled:opacity-50"
-            style={{ background: "var(--primary)", color: "var(--background)" }}
+            style={{ background: "var(--primary)", color: "var(--text-primary)" }}
           >
             {loading ? "Annotating..." : buttonText}
           </button>

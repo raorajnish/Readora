@@ -16,10 +16,8 @@ const BottomNav = () => {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-[100] flex items-center justify-around px-2 pt-1 pb-safe bg-[var(--surface)]"
+      className="fixed bottom-0 left-0 right-0 z-100 md:hidden flex justify-around items-center h-16 bg-[var(--surface)] border-t border-[var(--border)] px-6 shadow-lg"
       style={{
-        borderTop: "1px solid var(--border)",
-        boxShadow: "0 -4px 20px rgba(0,0,0,0.08)",
         paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)",
       }}
     >
@@ -33,7 +31,7 @@ const BottomNav = () => {
             }`
           }
           style={({ isActive }) => ({
-            color: isActive ? "var(--secondary)" : "var(--text-muted)",
+            color: isActive ? "var(--secondary)" : "var(--text-primary)",
           })}
         >
           <Icon size={22} strokeWidth={label === "Add" ? 2.5 : 2} />

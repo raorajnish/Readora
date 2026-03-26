@@ -158,10 +158,9 @@ const ProfilePage = ({ theme, onToggle }) => {
       <div className="max-w-xl mx-auto px-4 py-5">
         {/* Avatar + Name */}
         <div
-          className="flex flex-col items-center gap-3 p-6 rounded-3xl mb-5 text-center"
+          className="flex flex-col items-center gap-3 p-6 rounded-3xl mb-5 text-center text-primary"
           style={{
             background: "var(--surface)",
-            color: "var(--text-primary)",
             border: "1px solid var(--border)",
           }}
         >
@@ -212,21 +211,66 @@ const ProfilePage = ({ theme, onToggle }) => {
           <InfoRow icon={Phone} label="Phone" value={user?.phone_number} />
         </div>
 
-        {/* Add Book Button */}
-        <button
-          onClick={() => navigate("/create")}
-          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl mb-5 transition-all hover:opacity-90 color-text-primary"
+
+        {/* Bookmarks */}
+        <div
+          className="p-4 rounded-2xl mb-5"
           style={{
-            background: "var(--primary)",
-            color: "var(--background)",
-            border: "1px solid var(--primary)",
-            fontFamily: "var(--font-lora)",
-            fontWeight: "600",
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
           }}
         >
-          <Plus size={18} />
-          Add New Book
-        </button>
+          <h3
+            className="text-xs font-semibold uppercase tracking-wider mb-3"
+            style={{ color: "var(--text-muted)" }}
+          >
+            <Bookmark size={12} className="inline mr-1" />
+            Bookmarks
+          </h3>
+          {loading ? (
+            <p className="text-sm py-2" style={{ color: "var(--text-muted)" }}>
+              Loading...
+            </p>
+          ) : bookmarks.length === 0 ? (
+            <div className="flex flex-col items-center py-6 gap-2">
+              <BookOpen
+                size={24}
+                style={{ color: "var(--text-muted)", opacity: 0.4 }}
+              />
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                No bookmarks yet
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {bookmarks.map((bm) => (
+                <button
+                  key={bm.id}
+                  onClick={() => navigate(`/book/${bm.book}`)}
+                  className="w-full flex items-center justify-between p-3 rounded-xl transition-all hover:opacity-75 text-left"
+                  style={{
+                    background: "var(--surface-alt)",
+                    border: "1px solid var(--border-light)",
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <BookOpen size={14} style={{ color: "var(--secondary)" }} />
+                    <span
+                      className="text-sm font-medium"
+                      style={{ color: "var(--text-primary)" }}
+                    >
+                      {bm.book_title || `Book #${bm.book}`}
+                    </span>
+                  </div>
+                  <ChevronRight
+                    size={14}
+                    style={{ color: "var(--text-muted)" }}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* My Books */}
         <div
@@ -329,71 +373,27 @@ const ProfilePage = ({ theme, onToggle }) => {
           )}
         </div>
 
-        {/* Bookmarks */}
-        <div
-          className="p-4 rounded-2xl mb-5"
+        {/* Add Book Button */}
+        <button
+          onClick={() => navigate("/create")}
+          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl mb-8 transition-all hover:opacity-90 color-text-primary shadow-sm"
           style={{
             background: "var(--surface)",
-            border: "1px solid var(--border)",
+            color: "var(--text-secondary)",
+            border: "1px solid var(--secondary)",
+            fontFamily: "var(--font-lora)",
+            fontWeight: "600",
           }}
         >
-          <h3
-            className="text-xs font-semibold uppercase tracking-wider mb-3"
-            style={{ color: "var(--text-muted)" }}
-          >
-            <Bookmark size={12} className="inline mr-1" />
-            Bookmarks
-          </h3>
-          {loading ? (
-            <p className="text-sm py-2" style={{ color: "var(--text-muted)" }}>
-              Loading...
-            </p>
-          ) : bookmarks.length === 0 ? (
-            <div className="flex flex-col items-center py-6 gap-2">
-              <BookOpen
-                size={24}
-                style={{ color: "var(--text-muted)", opacity: 0.4 }}
-              />
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                No bookmarks yet
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {bookmarks.map((bm) => (
-                <button
-                  key={bm.id}
-                  onClick={() => navigate(`/book/${bm.book}`)}
-                  className="w-full flex items-center justify-between p-3 rounded-xl transition-all hover:opacity-75 text-left"
-                  style={{
-                    background: "var(--surface-alt)",
-                    border: "1px solid var(--border-light)",
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    <BookOpen size={14} style={{ color: "var(--secondary)" }} />
-                    <span
-                      className="text-sm font-medium"
-                      style={{ color: "var(--text-primary)" }}
-                    >
-                      {bm.book_title || `Book #${bm.book}`}
-                    </span>
-                  </div>
-                  <ChevronRight
-                    size={14}
-                    style={{ color: "var(--text-muted)" }}
-                  />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+          <Plus size={18} />
+          Add New Book
+        </button>
       </div>
 
       {/* Deletion Confirmation Modal */}
       {confirmModal && (
         <div 
-          className="fixed inset-0 z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-110 flex items-center justify-center p-4 animate-in fade-in duration-200"
           style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
         >
           <div 
@@ -401,7 +401,7 @@ const ProfilePage = ({ theme, onToggle }) => {
             style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
           >
             <div className="flex flex-col items-center text-center gap-4">
-              <div className="p-3 rounded-2xl bg-red-500/10 text-red-500">
+              <div className="aspect-2/3 rounded-xl overflow-hidden shadow-2xl border border-(--border)">
                 <AlertTriangle size={32} />
               </div>
               <div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, PlusCircle, BookOpen, RefreshCw } from 'lucide-react';
+import { Search, BookOpen, RefreshCw } from 'lucide-react';
 import { getBooks } from '../api/books';
 import { useAuth } from '../context/AuthContext';
 import BookCard from '../components/BookCard';
@@ -8,17 +8,23 @@ import BookCard from '../components/BookCard';
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [books, setBooks] = useState([]);
+  const [books, setBooks] = useState(() => {
+    const cached = localStorage.getItem('readora_books_cache');
+    return cached ? JSON.parse(cached) : [];
+  });
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!localStorage.getItem('readora_books_cache'));
   const [error, setError] = useState('');
 
   const fetchBooks = useCallback(async (q = '') => {
-    setLoading(true);
+    if (books.length === 0) setLoading(true);
     setError('');
     try {
       const res = await getBooks(q);
       setBooks(res.data);
+      if (!q) {
+        localStorage.setItem('readora_books_cache', JSON.stringify(res.data));
+      }
     } catch {
       setError('Failed to load books. Check your connection.');
     } finally {
@@ -55,7 +61,7 @@ const Dashboard = () => {
             Hello, {user?.username} 👋
           </h1>
 
-          {/* Search + Add */}
+          {/* Search */}
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search
@@ -76,14 +82,6 @@ const Dashboard = () => {
                 }}
               />
             </div>
-            <button
-              onClick={() => navigate('/create')}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:opacity-85 active:scale-95 md:flex"
-              style={{ background: 'var(--primary)', color: 'var(--background)' }}
-            >
-              <PlusCircle size={16} />
-              <span className="hidden sm:inline">Add Book</span>
-            </button>
           </div>
         </div>
       </div>
@@ -136,19 +134,9 @@ const Dashboard = () => {
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                 {search
                   ? `Try a different search term`
-                  : 'Be the first to add a book!'}
+                  : 'Library is currently being curated.'}
               </p>
             </div>
-            {!search && (
-              <button
-                onClick={() => navigate('/create')}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-85"
-                style={{ background: 'var(--primary)', color: 'var(--background)' }}
-              >
-                <PlusCircle size={15} />
-                Add First Book
-              </button>
-            )}
           </div>
         ) : (
           <>
