@@ -137,7 +137,7 @@ def _extract_cloudinary_public_id(url):
         return None
 
 
-@api_view(['POST'])
+@api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def delete_book(request, book_id):
     try:

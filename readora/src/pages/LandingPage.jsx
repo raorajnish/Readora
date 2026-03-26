@@ -4,33 +4,33 @@ import { BookOpen, Lock, MessageSquare, Zap, Shield, Sparkles } from 'lucide-rea
 const features = [
   {
     icon: BookOpen,
-    title: 'Real PDF Books',
-    desc: 'Browse and read beautifully presented books with a full PDF reader experience.',
-  },
-  {
-    icon: Lock,
-    title: 'Private Access',
-    desc: 'Each book hides a private space, unlocked only with your exclusive promo code.',
-  },
-  {
-    icon: MessageSquare,
-    title: 'Hidden Chat',
-    desc: 'Communicate privately inside "notes" — no one else can see what\'s inside.',
+    title: 'Digital Library',
+    desc: 'Access a growing collection of literature and academic resources in high-fidelity PDF format.',
   },
   {
     icon: Shield,
-    title: 'Stealth Design',
-    desc: 'Everything looks like a normal book platform. Your privacy is by design.',
+    title: 'Researcher Access',
+    desc: 'Secure authentication ensures your reading list and personal data stay strictly private.',
   },
   {
-    icon: Zap,
-    title: 'Instant Access',
-    desc: 'Sign in and dive in within seconds. No fluff, no nonsense.',
+    icon: MessageSquare,
+    title: 'Document Annotations',
+    desc: 'Advanced tools to manage your thoughts and annotations directly within the reading interface.',
   },
   {
     icon: Sparkles,
-    title: 'Your Bookshelf',
-    desc: 'Bookmark favourites, manage your reading list, personalize your experience.',
+    title: 'Curated Collections',
+    desc: 'Organize your library with custom bookmarks and a personalized digital bookshelf.',
+  },
+  {
+    icon: Zap,
+    title: 'Seamless Experience',
+    desc: 'A lightning-fast, distraction-free environment designed for deep focus and reading.',
+  },
+  {
+    icon: Shield,
+    title: 'Minimalist Design',
+    desc: 'A clean, modern interface that prioritizes content and ease of use above all else.',
   },
 ];
 
@@ -63,7 +63,7 @@ const LandingPage = () => {
             }}
           >
             <Sparkles size={12} />
-            Private Reading. Private Conversations.
+            Explore. Research. Annotate.
           </div>
 
           {/* Headline */}
@@ -71,16 +71,15 @@ const LandingPage = () => {
             className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6"
             style={{ fontFamily: 'var(--font-lora)', color: 'var(--text-primary)' }}
           >
-            Books that hide{' '}
-            <span style={{ color: 'var(--secondary)' }}>your secrets</span>
+            The sanctuary for <span style={{ color: 'var(--secondary)' }}>modern readers</span>
           </h1>
 
           <p
             className="text-base md:text-lg mb-10 max-w-xl mx-auto leading-relaxed"
             style={{ color: 'var(--text-secondary)' }}
           >
-            Readora is a stealth book platform — explore real books and unlock
-            hidden private spaces with a secure promo code.
+            Readora is a premium digital library for scholars and book lovers. 
+            Access a curated collection of works in a distraction-free, academic environment.
           </p>
 
           {/* CTAs */}
@@ -128,7 +127,7 @@ const LandingPage = () => {
             Everything you need
           </h2>
           <p className="text-sm md:text-base" style={{ color: 'var(--text-muted)' }}>
-            Built for readers who value privacy.
+            Tools built to empower your literary journey.
           </p>
         </div>
 
@@ -180,7 +179,7 @@ const LandingPage = () => {
             Ready to explore?
           </h2>
           <p className="text-sm mb-6 relative z-10" style={{ color: 'rgba(224,225,221,0.7)' }}>
-            Join Readora and discover a new way to read — and connect.
+            Join Readora today and experience a more refined way to read and research.
           </p>
           <Link
             to="/auth?tab=register"

@@ -16,6 +16,8 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { getBookmarks, getUserBooks, deleteBook } from "../api/books";
 import ThemeToggle from "../components/ThemeToggle";
+import Toast from "../components/Toast";
+import { X, AlertTriangle } from "lucide-react";
 
 const ProfilePage = ({ theme, onToggle }) => {
   const { user, logout } = useAuth();
@@ -26,6 +28,8 @@ const ProfilePage = ({ theme, onToggle }) => {
   const [userBooksLoading, setUserBooksLoading] = useState(true);
   const [deletingBookId, setDeletingBookId] = useState(null);
   const [activeMenuBookId, setActiveMenuBookId] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [confirmModal, setConfirmModal] = useState(null); // { id, title }
 
   useEffect(() => {
     const fetchBookmarks = getBookmarks()
@@ -72,17 +76,23 @@ const ProfilePage = ({ theme, onToggle }) => {
     navigate(`/create/${bookId}`);
   };
 
-  const handleDeleteBook = async (bookId) => {
+  const handleDeleteBook = (bookId, bookTitle) => {
     setActiveMenuBookId(null);
-    if (!window.confirm("Delete this book permanently?")) return;
+    setConfirmModal({ id: bookId, title: bookTitle });
+  };
 
+  const executeDelete = async () => {
+    const bookId = confirmModal.id;
+    setConfirmModal(null);
+    
     try {
       setDeletingBookId(bookId);
       await deleteBook(bookId);
       setUserBooks((prev) => prev.filter((book) => book.id !== bookId));
+      setToast({ message: "Book deleted successfully", type: "success" });
     } catch (err) {
       console.error("deleteBook failed", err);
-      window.alert("Failed to delete the book. Please try again.");
+      setToast({ message: "Failed to delete the book", type: "error" });
     } finally {
       setDeletingBookId(null);
     }
@@ -300,7 +310,7 @@ const ProfilePage = ({ theme, onToggle }) => {
                           <Edit3 size={14} /> Edit
                         </button>
                         <button
-                          onClick={() => handleDeleteBook(book.id)}
+                          onClick={() => handleDeleteBook(book.id, book.title)}
                           disabled={deletingBookId === book.id}
                           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-gray-100"
                           style={{ color: "var(--danger)" }}
@@ -379,6 +389,55 @@ const ProfilePage = ({ theme, onToggle }) => {
           )}
         </div>
       </div>
+
+      {/* Deletion Confirmation Modal */}
+      {confirmModal && (
+        <div 
+          className="fixed inset-0 z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200"
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+        >
+          <div 
+            className="w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+          >
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="p-3 rounded-2xl bg-red-500/10 text-red-500">
+                <AlertTriangle size={32} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>Delete Book?</h3>
+                <p className="text-sm mt-1 px-2" style={{ color: "var(--text-secondary)" }}>
+                  Are you sure you want to delete <span className="font-semibold">"{confirmModal.title}"</span>? This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex gap-3 w-full mt-2">
+                <button 
+                  onClick={() => setConfirmModal(null)}
+                  className="flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all hover:opacity-75"
+                  style={{ background: "var(--surface-alt)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={executeDelete}
+                  className="flex-1 py-3 px-4 rounded-xl text-sm font-bold shadow-lg shadow-red-500/20 transition-all hover:opacity-90"
+                  style={{ background: "#ef4444", color: "white" }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
     </div>
   );
 };

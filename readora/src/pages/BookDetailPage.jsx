@@ -10,11 +10,14 @@ import {
   User,
   Calendar,
   Maximize,
+  PenLine,
 } from "lucide-react";
-import { getBook, toggleBookmark, verifyPassword } from "../api/books";
+import { getBooks, getBook, toggleBookmark, verifyPassword } from "../api/books";
 import { useAuth } from "../context/AuthContext";
 import PromoCodeModal from "../components/PromoCodeModal";
 import ChatSection from "../components/ChatSection";
+import PlatformFooter from "../components/PlatformFooter";
+import Toast from "../components/Toast";
 
 const BookDetailPage = () => {
   const { id } = useParams();
@@ -27,6 +30,8 @@ const BookDetailPage = () => {
   const [showPromo, setShowPromo] = useState(false);
   const [chatUnlocked, setChatUnlocked] = useState(false);
   const [pdfLoadFailed, setPdfLoadFailed] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [moreBooks, setMoreBooks] = useState([]);
   const pdfContainerRef = useRef(null);
 
   const enterFullScreen = async () => {
@@ -44,6 +49,7 @@ const BookDetailPage = () => {
   };
 
   useEffect(() => {
+    setLoading(true);
     getBook(id)
       .then((res) => {
         setBook(res.data);
@@ -51,14 +57,27 @@ const BookDetailPage = () => {
       })
       .catch(() => navigate("/dashboard"))
       .finally(() => setLoading(false));
+
+    // Fetch other books for "More Like This"
+    getBooks()
+      .then((res) => {
+        const others = (res.data || []).filter(b => b.id.toString() !== id.toString());
+        setMoreBooks(others.slice(0, 4)); // Get up to 4 other books
+      })
+      .catch(err => console.error("Failed to fetch more books", err));
   }, [id, navigate]);
 
   const handleBookmark = async () => {
     try {
       await toggleBookmark(book.id);
       setBookmarked((b) => !b);
+      setToast({ 
+        message: bookmarked ? "Removed from bookmarks" : "Added to bookmarks", 
+        type: "success" 
+      });
     } catch (e) {
       console.error(e);
+      setToast({ message: "Failed to update bookmark", type: "error" });
     }
   };
 
@@ -155,9 +174,9 @@ const BookDetailPage = () => {
           </div>
 
           {/* Meta */}
-          <div className="flex-1 min-w-0 py-1">
+          <div className="flex-1 min-w-0 py-1 flex flex-col justify-center">
             <h1
-              className="text-xl md:text-2xl font-bold mb-1 leading-tight truncate"
+              className="text-2xl md:text-3xl font-extrabold mb-2 leading-tight"
               style={{
                 fontFamily: "var(--font-lora)",
                 color: "var(--text-primary)",
@@ -167,53 +186,63 @@ const BookDetailPage = () => {
               {book.title}
             </h1>
 
-            {book.author && (
-              <div
-                className="flex items-center gap-1.5 mb-2"
-                style={{ color: "var(--text-muted)" }}
-              >
-                <User size={13} />
-                <span className="text-sm">{book.author}</span>
-              </div>
-            )}
+            <div className="flex flex-col gap-2 mb-4">
+              {book.author && (
+                <div
+                  className="flex items-center gap-2"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  <div className="p-1 rounded-md" style={{ background: "var(--surface)" }}>
+                    <User size={12} />
+                  </div>
+                  <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+                    {book.author}
+                  </span>
+                </div>
+              )}
 
-            {book.created_at && (
-              <div
-                className="flex items-center gap-1.5 mb-3"
-                style={{ color: "var(--text-muted)" }}
-              >
-                <Calendar size={13} />
-                <span className="text-xs">
-                  {new Date(book.created_at).toLocaleDateString("en-IN", {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </span>
-              </div>
-            )}
+              {book.created_at && (
+                <div
+                  className="flex items-center gap-2"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  <div className="p-1 rounded-md" style={{ background: "var(--surface)" }}>
+                    <Calendar size={12} />
+                  </div>
+                  <span className="text-xs">
+                    {new Date(book.created_at).toLocaleDateString("en-IN", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                </div>
+              )}
+            </div>
 
             {/* Desktop bookmark */}
             {user && (
-              <button
-                onClick={handleBookmark}
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-75"
-                style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                  color: bookmarked ? "var(--secondary)" : "var(--text-muted)",
-                }}
-              >
-                {bookmarked ? (
-                  <>
-                    <BookmarkCheck size={13} fill="currentColor" /> Saved
-                  </>
-                ) : (
-                  <>
-                    <Bookmark size={13} /> Bookmark
-                  </>
-                )}
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleBookmark}
+                  className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:scale-105 active:scale-95 shadow-sm"
+                  style={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    color: bookmarked ? "var(--secondary)" : "var(--text-muted)",
+                  }}
+                >
+                  {bookmarked ? (
+                    <>
+                      <BookmarkCheck size={14} fill="currentColor" /> Saved
+                    </>
+                  ) : (
+                    <>
+                      <Bookmark size={14} /> Bookmark
+                    </>
+                  )}
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -267,18 +296,33 @@ const BookDetailPage = () => {
                   Read Book
                 </span>
               </div>
-              <button
-                onClick={enterFullScreen}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-80"
-                style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                  color: "var(--text-primary)",
-                }}
-              >
-                <Maximize size={14} />
-                Full Screen
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowPromo(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105 active:scale-95"
+                  style={{
+                    background: "var(--surface-alt)",
+                    border: "1px solid var(--border)",
+                    color: "var(--text-primary)",
+                  }}
+                  title="Annotate PDF"
+                >
+                  <PenLine size={14} />
+                  <span className="hidden sm:inline">Annotate</span>
+                </button>
+                <button
+                  onClick={enterFullScreen}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105 active:scale-95"
+                  style={{
+                    background: "var(--surface-alt)",
+                    border: "1px solid var(--border)",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  <Maximize size={14} />
+                  Full Screen
+                </button>
+              </div>
             </div>
             <div
               ref={pdfContainerRef}
@@ -366,28 +410,68 @@ const BookDetailPage = () => {
           </div>
         )}
 
-        {/* --- PRIVATE NOTES BUTTON --- */}
-        {user && !chatUnlocked && (
-          <button
-            onClick={() => setShowPromo(true)}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-200 hover:opacity-85 active:scale-95"
-            style={{ background: "var(--primary)", color: "var(--background)" }}
-          >
-            <MessageSquare size={16} />
-            Private Notes
-          </button>
+        {/* --- MORE LIKE THIS --- */}
+        {moreBooks.length > 0 && (
+          <div className="mt-8 mb-10">
+            <h2 
+              className="text-sm font-bold uppercase tracking-widest mb-4 px-1"
+              style={{ color: "var(--text-muted)", opacity: 0.8 }}
+            >
+              More Like This
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {moreBooks.map(b => (
+                <div 
+                  key={b.id}
+                  onClick={() => navigate(`/book/${b.id}`)}
+                  className="flex flex-col gap-2 cursor-pointer group"
+                >
+                  <div 
+                    className="aspect-[2/3] rounded-xl overflow-hidden shadow-sm border border-[var(--border)] transition-transform group-hover:-translate-y-1"
+                    style={{ background: "var(--surface)" }}
+                  >
+                    {b.cover_image_url ? (
+                      <img src={b.cover_image_url} alt={b.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-2xl font-bold opacity-20" style={{ background: "var(--primary)", color: "var(--background)" }}>
+                        {b.title[0]}
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="text-xs font-bold line-clamp-1 group-hover:text-[var(--secondary)] transition-colors">
+                    {b.title}
+                  </h3>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Notes modal (mobile + desktop unified) */}
         {chatUnlocked && (
           <ChatSection bookId={book.id} onClose={() => setChatUnlocked(false)} />
         )}
+
+        {/* Platform Footer */}
+        <PlatformFooter />
       </div>
+
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
 
       {/* Promo Modal */}
       {showPromo && (
         <PromoCodeModal
           book={book}
+          title="Annotate your PDF"
+          description="Enable advanced reading tools and annotations for this document."
+          errorText="API Error: Failed to annotate"
+          buttonText="Annotate"
           onClose={() => setShowPromo(false)}
           onSuccess={() => {
             setShowPromo(false);

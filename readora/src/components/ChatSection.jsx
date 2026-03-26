@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { MessageSquare, Settings, X, Plus, Send, MoreVertical, Smile, Navigation, Copy, Trash2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
+import Toast from "./Toast";
 
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
 
@@ -18,6 +19,8 @@ const ChatSection = ({ bookId, onClose }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [confirmDeleteMe, setConfirmDeleteMe] = useState(false);
   const [confirmDeleteGlobal, setConfirmDeleteGlobal] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const clearKey = `chat_clear_${bookId}_${user?.id}`;
   const clearTime = localStorage.getItem(clearKey) ? parseInt(localStorage.getItem(clearKey)) : 0;
@@ -198,6 +201,7 @@ const ChatSection = ({ bookId, onClose }) => {
 
   const copyText = (text) => {
       navigator.clipboard.writeText(text);
+      setToast({ message: "Text copied to clipboard", type: "success" });
       setOptionsMenu(null);
   };
 
@@ -355,7 +359,7 @@ const ChatSection = ({ bookId, onClose }) => {
                         setConfirmDeleteMe(false);
                         setShowSettings(false);
                       }}
-                      className="flex-1 py-1.5 rounded-lg bg-[var(--danger)] bg-opacity-10 text-[var(--danger)] text-xs font-semibold hover:bg-opacity-20 transition-colors"
+                      className="flex-1 py-1.5 rounded-lg bg-[var(--danger)] text-white text-xs font-semibold hover:opacity-90 transition-opacity"
                     >
                       Confirm Clear
                     </button>
@@ -388,19 +392,33 @@ const ChatSection = ({ bookId, onClose }) => {
                       <button 
                         onClick={async (e) => {
                           e.stopPropagation();
+                          if (isDeleting) return;
                           try {
+                            setIsDeleting(true);
                             await api.delete(`/chat/messages/${bookId}/delete/`);
                             setMessages(prev => prev.filter(m => m.sender_id !== user?.id));
                             if (socket) socket.send(JSON.stringify({ type: "delete_user_messages", user_id: user.id }));
                             setConfirmDeleteGlobal(false);
+                            setToast({ message: "Global chats deleted successfully", type: "success" });
                             setShowSettings(false);
                           } catch (err) {
                             console.error("Delete failed:", err);
+                            setToast({ message: "Failed to delete global chats", type: "error" });
+                          } finally {
+                            setIsDeleting(false);
                           }
                         }}
-                        className="flex-1 py-1.5 rounded-lg bg-[var(--danger)] text-white text-xs font-semibold hover:opacity-90 transition-opacity"
+                        disabled={isDeleting}
+                        className="flex-1 py-1.5 rounded-lg bg-[var(--danger)] text-white text-xs font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
                       >
-                        Yes, Delete All
+                        {isDeleting ? (
+                          <>
+                            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Deleting...
+                          </>
+                        ) : (
+                          "Yes, Delete All"
+                        )}
                       </button>
                       <button 
                         onClick={(e) => {
@@ -433,7 +451,7 @@ const ChatSection = ({ bookId, onClose }) => {
           </button>
           
           <div className="flex flex-col items-center justify-center min-w-[120px]">
-             <span className="font-bold text-sm">Notes Editor</span>
+             <span className="font-bold text-sm">Annotations</span>
              <span className="text-[10px] opacity-70">
               {onlineUsersCount > 0 ? `${onlineUsersCount} online` : 'Connecting...'}
              </span>
@@ -536,6 +554,13 @@ const ChatSection = ({ bookId, onClose }) => {
             </div>
         </div>
       </div>
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
     </div>
   );
 };

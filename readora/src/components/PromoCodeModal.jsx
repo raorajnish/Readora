@@ -1,8 +1,16 @@
 import { useState } from "react";
-import { X, Lock, KeyRound } from "lucide-react";
+import { X, Lock } from "lucide-react";
 import { verifyPassword } from "../api/books";
 
-const PromoCodeModal = ({ book, onClose, onSuccess }) => {
+const PromoCodeModal = ({ 
+  book, 
+  onClose, 
+  onSuccess, 
+  title = "Enter Promocode", 
+  description = "This book requires a private access code.", 
+  errorText = "Invalid Promocode",
+  buttonText = "Unlock"
+}) => {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,10 +25,10 @@ const PromoCodeModal = ({ book, onClose, onSuccess }) => {
       if (res.data.access) {
         onSuccess();
       } else {
-        setError("Invalid Promocode");
+        setError(errorText);
       }
     } catch {
-      setError("Invalid Promocode");
+      setError(errorText);
     } finally {
       setLoading(false);
     }
@@ -49,13 +57,7 @@ const PromoCodeModal = ({ book, onClose, onSuccess }) => {
           <X size={18} />
         </button>
 
-        {/* Icon */}
-        <div
-          className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-          style={{ background: "var(--primary)", color: "var(--background)" }}
-        >
-          <KeyRound size={22} />
-        </div>
+        {/* Icon removed */}
 
         <h2
           className="text-lg font-bold mb-1"
@@ -64,19 +66,14 @@ const PromoCodeModal = ({ book, onClose, onSuccess }) => {
             color: "var(--text-primary)",
           }}
         >
-          Enter Promocode
+          {title}
         </h2>
         <p className="text-sm mb-5" style={{ color: "var(--text-muted)" }}>
-          This book requires a private access code.
+          {description}
         </p>
 
         <form onSubmit={handleVerify} className="space-y-3">
           <div className="relative">
-            <Lock
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2"
-              style={{ color: "var(--text-muted)" }}
-            />
             <input
               type="password"
               placeholder="Enter access code"
@@ -85,7 +82,7 @@ const PromoCodeModal = ({ book, onClose, onSuccess }) => {
                 setCode(e.target.value);
                 setError("");
               }}
-              className="w-full pl-9 pr-4 py-3 rounded-xl text-sm outline-none transition-all"
+              className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
               style={{
                 background: "var(--surface-alt)",
                 border: `1px solid ${error ? "var(--danger)" : "var(--border)"}`,
@@ -110,7 +107,7 @@ const PromoCodeModal = ({ book, onClose, onSuccess }) => {
             className="w-full py-3 rounded-xl text-sm font-semibold transition-all duration-200 hover:opacity-85 active:scale-95 disabled:opacity-50"
             style={{ background: "var(--primary)", color: "var(--background)" }}
           >
-            {loading ? "Verifying..." : "Unlock"}
+            {loading ? "Annotating..." : buttonText}
           </button>
         </form>
       </div>
