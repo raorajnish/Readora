@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, CheckCircle, AlertCircle, Info } from "lucide-react";
 
 const Toast = ({ message, type = "info", onClose, duration = 3000 }) => {
@@ -10,45 +11,40 @@ const Toast = ({ message, type = "info", onClose, duration = 3000 }) => {
   }, [onClose, duration]);
 
   const icons = {
-    success: <CheckCircle size={18} className="text-green-500" />,
-    error: <AlertCircle size={18} className="text-red-500" />,
-    info: <Info size={18} className="text-blue-500" />
+    success: <CheckCircle size={20} style={{ color: "var(--success)" }} />,
+    error: <AlertCircle size={20} style={{ color: "var(--danger)" }} />,
+    info: <Info size={20} style={{ color: "var(--info)" }} />
   };
 
-  const bgStyles = {
-    success: "rgba(34, 197, 94, 0.1)",
-    error: "rgba(239, 68, 68, 0.1)",
-    info: "rgba(59, 130, 246, 0.1)"
-  };
-
-  const borderStyles = {
-    success: "rgba(34, 197, 94, 0.2)",
-    error: "rgba(239, 68, 68, 0.2)",
-    info: "rgba(59, 130, 246, 0.2)"
-  };
-
-  return (
-    <div
-      className="fixed bottom-20 md:bottom-10 left-1/2 -translate-x-1/2 z-110 w-full max-w-sm px-4 pointer-events-none bg-(--surface)"
-    >
+  const toastContent = (
+    <div className="fixed top-1/5 left-1/2 z-200 w-full max-w-sm mx-auto pointer-events-none flex justify-center align-center">
       <div 
-        className="shrink-0 p-2 rounded-xl"
-        style={{ background: bgStyles[type] }}
+        className="pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl backdrop-blur-2xl border animate-toast-in"
+        style={{ 
+          background: "rgba(13, 27, 42, 0.92)", 
+          borderColor: `var(--${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'})`,
+          boxShadow: `0 12px 40px rgba(0, 0, 0, 0.5)`
+        }}
       >
-        {icons[type]}
+        <div className="shrink-0">
+          {icons[type]}
+        </div>
+        
+        <p className="flex-1 text-sm font-semibold text-white tracking-wide">
+          {message}
+        </p>
+
+        <button
+          onClick={onClose}
+          className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/40 hover:text-white"
+        >
+          <X size={18} />
+        </button>
       </div>
-      <p className="flex-1 text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-        {message}
-      </p>
-      <button
-        onClick={onClose}
-        className="p-1 rounded-lg hover:opacity-60 transition-opacity"
-        style={{ color: "var(--text-muted)" }}
-      >
-        <X size={16} />
-      </button>
     </div>
   );
+
+  return createPortal(toastContent, document.body);
 };
 
 export default Toast;

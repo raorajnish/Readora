@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { MessageSquare, Settings, X, Plus, Send, MoreVertical, Smile, Navigation, Copy, Trash2 } from "lucide-react";
+import { MessageSquare, Settings, X, Plus, Send, MoreVertical, Smile, Navigation, Copy, Trash2, Reply } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import Toast from "./Toast";
@@ -23,6 +23,7 @@ const ChatSection = ({ bookId, onClose }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [fullscreenImage, setFullscreenImage] = useState(null);
+  const [replyingTo, setReplyingTo] = useState(null);
   
   const clearKey = `chat_clear_${bookId}_${user?.id}`;
   const clearTime = localStorage.getItem(clearKey) ? parseInt(localStorage.getItem(clearKey)) : 0;
@@ -159,11 +160,13 @@ const ChatSection = ({ bookId, onClose }) => {
             type: "message",
             sender_id: user.id,
             content: input.trim(),
-            media_url: finalMediaUrl
+            media_url: finalMediaUrl,
+            reply_to: replyingTo?.id
           }));
         }
          setInput("");
         setSelectedImage(null);
+        setReplyingTo(null);
         setIsSending(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
@@ -234,6 +237,7 @@ const ChatSection = ({ bookId, onClose }) => {
 
     return (
       <div
+        id={`msg-${msg.id}`}
         key={msg.id || index}
         className={`flex mb-4 relative ${isMe ? "justify-end" : "justify-start"} group`}
       >
@@ -258,6 +262,15 @@ const ChatSection = ({ bookId, onClose }) => {
                   border: isMe ? `1px solid var(--primary)` : "1px solid var(--border)",
               }}
             >
+              {msg.reply_content && (
+                  <div className={`mb-2 p-2 rounded-lg border-l-4 text-xs bg-black/5 flex flex-col gap-0.5 border-(--secondary) opacity-80 cursor-pointer hover:bg-black/10 transition-colors`} onClick={() => {
+                        const target = document.getElementById(`msg-${msg.reply_to}`);
+                        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }}>
+                      <span className="font-bold text-(--secondary)">{msg.reply_username || "Unknown"}</span>
+                      <span className="truncate max-w-full text-(--text-muted)">{msg.reply_content}</span>
+                  </div>
+              )}
               {msg.media_url && (
                 <img 
                   src={msg.media_url} 
@@ -293,21 +306,27 @@ const ChatSection = ({ bookId, onClose }) => {
           </div>
 
           {/* Inline Action Buttons */}
-          <div className={`flex items-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity mb-2 gap-0.5 ${isMe ? "flex-row-reverse mr-1 z-10" : "ml-1 z-10"}`}>
+          <div className={`flex items-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity mb-2 gap-1 ${isMe ? "flex-row-reverse mr-1 z-10" : "ml-1 z-10"}`}>
               {!isMe && (
-                  <div className="relative">
-                      <button onClick={() => setActiveReactMsg(activeReactMsg === msg.id ? null : msg.id)} className="p-1 rounded-full hover:bg-(--surface) transition-colors text-(--text-muted) hover:text-(--secondary)">
-                          <Smile size={16} />
+                  <>
+                      <div className="relative">
+                          <button onClick={() => setActiveReactMsg(activeReactMsg === msg.id ? null : msg.id)} className="p-1 rounded-full hover:bg-(--surface) transition-colors text-(--text-muted) hover:text-(--secondary)">
+                              <Smile size={16} />
+                          </button>
+                          
+                          {activeReactMsg === msg.id && (
+                              <div className="absolute bottom-full -left-24 mb-2 shadow-lg rounded-full px-2 py-1.5 flex gap-2 z-50 bg-(--surface) border-(--border)">
+                                  {EMOJIS.map(emoji => (
+                                      <span key={emoji} onClick={() => reactMessage(msg.id, emoji)} className="cursor-pointer hover:scale-125 transition-transform text-lg">{emoji}</span>
+                                  ))}
+                              </div>
+                          )}
+                      </div>
+
+                      <button onClick={() => setReplyingTo({ id: msg.id, content: msg.content, username: msg.username })} className="p-1 rounded-full hover:bg-(--surface) transition-colors text-(--text-muted) hover:text-(--secondary)">
+                          <Reply size={16} />
                       </button>
-                      
-                      {activeReactMsg === msg.id && (
-                          <div className="absolute bottom-full -left-24 mb-2 shadow-lg rounded-full px-2 py-1.5 flex gap-2 z-50 bg-(--surface) border-(--border)">
-                              {EMOJIS.map(emoji => (
-                                  <span key={emoji} onClick={() => reactMessage(msg.id, emoji)} className="cursor-pointer hover:scale-125 transition-transform text-lg">{emoji}</span>
-                              ))}
-                          </div>
-                      )}
-                  </div>
+                  </>
               )}
               
               <div className="relative">
@@ -316,7 +335,7 @@ const ChatSection = ({ bookId, onClose }) => {
                   </button>
                   
                   {optionsMenu === msg.id && (
-                      <div className={`absolute bottom-full ${isMe ? '-right-12' : 'left-0'} mb-2 shadow-xl rounded-xl py-1 z-100 w-28 bg-(--surface) border-(--border) overflow-hidden`}>
+                      <div className={`absolute bottom-full ${isMe ? '-right-12' : 'left-0'} mb-1 shadow-xl rounded-xl py-1 z-100 w-28 bg-(--surface) border-(--border) overflow-hidden`}>
                           <button onClick={() => copyText(msg.content)} className="w-full text-left px-3 py-2 text-xs hover:opacity-75 transition-colors flex items-center gap-2 text-(--text-primary)"><Copy size={12}/> Copy</button>
                           {isMe && <button onClick={() => unsendMessage(msg.id)} className="w-full text-left px-3 py-2 text-xs transition-colors flex items-center gap-2 text-(--danger) hover:bg-(--danger) hover:bg-opacity-10"><Trash2 size={12}/> Unsend</button>}
                       </div>
@@ -334,11 +353,11 @@ const ChatSection = ({ bookId, onClose }) => {
         <div className="h-full w-full md:h-[600px] md:w-[450px] shadow-2xl flex flex-col md:rounded-2xl overflow-hidden bg-(--background) border border-(--border)">
           <div className="flex justify-between items-center px-4 py-4 border-b border-(--border) bg-(--surface)">
             <button onClick={() => setShowSettings(false)} className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:opacity-75 bg-(--surface-alt) text-(--text-primary)">Back</button>
-            <span className="font-bold text-sm text-(--text-primary)">Chat Settings</span>
+            <span className="font-bold text-sm text-(--text-primary)">Annotation Settings</span>
             <div className="w-12"></div>
           </div>
           <div className="flex-1 p-6 text-(--text-primary)">
-            <p className="text-sm opacity-70 mb-5">Manage your chat preferences here.</p>
+            <p className="text-sm opacity-70 mb-5">Manage your annotation preferences here.</p>
             
             <div className="flex flex-col gap-3">
               <div 
@@ -346,9 +365,9 @@ const ChatSection = ({ bookId, onClose }) => {
                 className="w-full py-3 px-4 rounded-xl border border-(--border) text-(--text-primary) transition-colors hover:bg-(--surface-alt) flex flex-col justify-center cursor-pointer"
               >
                 <div className="flex items-center justify-between w-full mb-1">
-                  <span className="font-medium">Clear Chat For Me</span>
+                  <span className="font-medium">Clear Annotations For Me</span>
                 </div>
-                <span className="text-[10px] opacity-60 font-normal">Only hides messages from your view locally</span>
+                <span className="text-[10px] opacity-60 font-normal">Only hides annotations from your view locally</span>
                 
                 {confirmDeleteMe && (
                   <div className="mt-3 pt-3 border-t border-(--border) flex items-center gap-2">
@@ -382,9 +401,9 @@ const ChatSection = ({ bookId, onClose }) => {
                 className="w-full py-3 px-4 rounded-xl border border-red-500/30 transition-colors hover:bg-(--surface-alt) hover:bg-opacity-10 flex flex-col justify-center cursor-pointer"
               >
                 <div className="flex items-center justify-between w-full mb-1">
-                  <span className="text-(--danger) font-medium">Delete My Chats Globally</span>
+                  <span className="text-(--danger) font-medium">Delete My Annotations In This Room</span>
                 </div>
-                <span className="text-[10px] opacity-60 font-normal text-(--danger)">Permanently unsends all your messages</span>
+                <span className="text-[10px] opacity-60 font-normal text-(--danger)">Permanently deletes all your annotations in this room</span>
                 
                 {confirmDeleteGlobal && (
                   <div className="mt-3 pt-3 border-t border-red-500/20 flex flex-col gap-2">
@@ -400,11 +419,11 @@ const ChatSection = ({ bookId, onClose }) => {
                             setMessages(prev => prev.filter(m => m.sender_id !== user?.id));
                             if (socket) socket.send(JSON.stringify({ type: "delete_user_messages", user_id: user.id }));
                             setConfirmDeleteGlobal(false);
-                            setToast({ message: "Global chats deleted successfully", type: "success" });
+                            setToast({ message: "Annotations deleted successfully", type: "success" });
                             setShowSettings(false);
                           } catch (err) {
                             console.error("Delete failed:", err);
-                            setToast({ message: "Failed to delete global chats", type: "error" });
+                            setToast({ message: "Failed to delete annotations", type: "error" });
                           } finally {
                             setIsDeleting(false);
                           }
@@ -464,7 +483,7 @@ const ChatSection = ({ bookId, onClose }) => {
         </div>
 
         {/* Message View Area */}
-        <div className="flex-1 overflow-y-auto p-4 pt-10 custom-scrollbar flex flex-col bg-(--background)">
+        <div className="flex-1 overflow-y-auto p-4 pt-12 custom-scrollbar flex flex-col bg-(--background)">
             {hasMore && (
                 <div className="flex justify-center mb-6">
                     <button onClick={loadMore} disabled={fetching} className="px-4 py-1.5 text-xs rounded-full transition-colors flex items-center gap-1 shadow-sm font-medium bg-(--surface) border border-(--border) text-(--text-primary) opacity-90 hover:opacity-100 focus:scale-95 active:scale-95">
@@ -475,7 +494,7 @@ const ChatSection = ({ bookId, onClose }) => {
             {messages.length === 0 && !fetching ? (
                 <div className="flex-1 flex flex-col items-center justify-center opacity-40 text-(--text-primary)">
                     <MessageSquare size={40} className="mb-3" />
-                    <p className="text-sm">Start a conversation</p>
+                    <p className="text-sm">Start writing annotations</p>
                 </div>
             ) : (
                 messages.filter(m => {
@@ -524,6 +543,18 @@ const ChatSection = ({ bookId, onClose }) => {
                             <X size={12} />
                         </button>
                     </div>
+                </div>
+            )}
+
+            {replyingTo && (
+                <div className="px-4 py-2 bg-(--surface-alt) border-t border-(--border) flex items-center justify-between animate-in slide-in-from-bottom-2 duration-200">
+                    <div className="flex flex-col border-l-2 border-(--secondary) pl-3 py-1 min-w-0">
+                        <span className="text-[10px] font-bold text-(--secondary)">Replying to {replyingTo.username}</span>
+                        <span className="text-xs text-(--text-primary) truncate opacity-80">{replyingTo.content || "Image"}</span>
+                    </div>
+                    <button onClick={() => setReplyingTo(null)} className="p-1 hover:bg-black/5 rounded-full transition-colors text-(--text-muted)">
+                        <X size={16} />
+                    </button>
                 </div>
             )}
 

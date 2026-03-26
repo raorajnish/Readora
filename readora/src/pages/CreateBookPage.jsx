@@ -141,6 +141,7 @@ const CreateBookPage = () => {
   const [loading, setLoading] = useState(false);
   const [bookLoading, setBookLoading] = useState(isEditMode);
   const [globalError, setGlobalError] = useState("");
+  const [showFileFields, setShowFileFields] = useState(false);
 
   useEffect(() => {
     if (!isEditMode) return;
@@ -194,7 +195,13 @@ const CreateBookPage = () => {
     setGlobalError("");
     try {
       const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+      Object.entries(form).forEach(([k, v]) => {
+        if (k === "password") {
+          if (v.trim()) fd.append(k, v);
+        } else {
+          fd.append(k, v);
+        }
+      });
       if (pdfFile) fd.append("pdf_file", pdfFile);
       if (coverFile) fd.append("cover_file", coverFile);
 
@@ -385,22 +392,49 @@ const CreateBookPage = () => {
           />
 
           {/* File uploads */}
-          <FileDropzone
-            label="PDF File"
-            icon={FileText}
-            accept=".pdf"
-            file={pdfFile}
-            onChange={setPdfFile}
-            hint="Supported: .pdf"
-          />
-          <FileDropzone
-            label="Cover Image"
-            icon={Image}
-            accept="image/*"
-            file={coverFile}
-            onChange={setCoverFile}
-            hint="Supported: .jpg, .png, .webp"
-          />
+          {isEditMode && !showFileFields ? (
+            <button
+              type="button"
+              onClick={() => setShowFileFields(true)}
+              className="w-full py-3 px-4 rounded-xl text-xs font-bold transition-all hover:bg-(--surface-alt)"
+              style={{ border: "1px dashed var(--border)", color: "var(--text-muted)" }}
+            >
+              Change PDF or Cover Image?
+            </button>
+          ) : (
+            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+              <FileDropzone
+                label="PDF File"
+                icon={FileText}
+                accept=".pdf"
+                file={pdfFile}
+                onChange={setPdfFile}
+                hint="Supported: .pdf"
+              />
+              <FileDropzone
+                label="Cover Image"
+                icon={Image}
+                accept="image/*"
+                file={coverFile}
+                onChange={setCoverFile}
+                hint="Supported: .jpg, .png, .webp"
+              />
+              {isEditMode && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowFileFields(false);
+                    setPdfFile(null);
+                    setCoverFile(null);
+                  }}
+                  className="text-[10px] font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  Cancel File Update
+                </button>
+              )}
+            </div>
+          )}
 
           {globalError && (
             <div

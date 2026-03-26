@@ -209,15 +209,19 @@ def update_book(request, book_id):
         except Exception as e:
             return Response({'error': f'Cover upload failed: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
 
-    serializer = BookCreateSerializer(book, data={
+    book_update_data = {
         'title': data.get('title', book.title),
         'description': data.get('description', book.description),
         'author': data.get('author', book.author),
         'book_username': data.get('book_username', book.book_username),
-        'password': data.get('password', book.password),
         'pdf_url': pdf_url,
         'cover_image_url': cover_url,
-    }, partial=True)
+    }
+
+    if data.get('password'):
+        book_update_data['password'] = data.get('password')
+    
+    serializer = BookCreateSerializer(book, data=book_update_data, partial=True)
     serializer.is_valid(raise_exception=True)
     book = serializer.save()
 

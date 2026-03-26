@@ -41,12 +41,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         # 🧠 MESSAGE
         if data['type'] == 'message':
-            msg = await self.save_message(
+            save_data = await self.save_message(
                 sender_id=data['sender_id'],
                 content=data.get('content'),
                 media_url=data.get('media_url'),
                 reply_to_id=data.get('reply_to')
             )
+            msg = save_data['msg']
 
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -58,6 +59,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'sender_id': msg.sender.id,
                     'username': msg.sender.username,
                     'reply_to': msg.reply_to_id,
+                    'reply_content': save_data['reply_content'],
+                    'reply_username': save_data['reply_username'],
                 }
             )
 
@@ -174,13 +177,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @sync_to_async
     def save_message(self, sender_id, content, media_url, reply_to_id=None):
         user = User.objects.get(id=sender_id)
-        return Message.objects.create(
+        msg = Message.objects.create(
             book_id=self.book_id,
             sender=user,
             content=content or "",
             media_url=media_url or "",
             reply_to_id=reply_to_id
         )
+        
+        reply_content = None
+        reply_username = None
+        if msg.reply_to:
+            reply_content = msg.reply_to.content
+            reply_username = msg.reply_to.sender.username
+            
+        return {
+            'msg': msg,
+            'reply_content': reply_content,
+            'reply_username': reply_username
+        }
 
     @sync_to_async
     def mark_seen(self, msg_id):

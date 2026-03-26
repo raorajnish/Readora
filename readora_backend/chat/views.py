@@ -30,6 +30,12 @@ def get_messages(request, book_id):
     message_data = []
     for msg in messages:
         reactions = [{'emoji': r.emoji, 'user_id': r.user_id} for r in msg.reactions.all()]
+        reply_content = None
+        reply_username = None
+        if msg.reply_to:
+            reply_content = msg.reply_to.content
+            reply_username = msg.reply_to.sender.username
+
         message_data.append({
             'id': msg.id,
             'content': msg.content,
@@ -40,6 +46,8 @@ def get_messages(request, book_id):
             'is_seen': msg.is_seen,
             'is_delivered': msg.is_delivered,
             'reply_to': msg.reply_to_id,
+            'reply_content': reply_content,
+            'reply_username': reply_username,
             'reactions': reactions
         })
 
