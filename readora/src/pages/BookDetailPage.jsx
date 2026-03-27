@@ -39,6 +39,7 @@ const BookDetailPage = () => {
   const { getCachedPdf, cachePdf } = useAssetCache();
   const pdfContainerRef = useRef(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [showMobileEmbed, setShowMobileEmbed] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -364,43 +365,68 @@ const BookDetailPage = () => {
               ref={pdfContainerRef}
               className="relative w-full overflow-hidden"
               style={{
-                minHeight: isMobile ? "200px" : "550px",
-                aspectRatio: isMobile ? "auto" : "1 / 1.414",
+                minHeight: isMobile ? (showMobileEmbed ? "550px" : "200px") : "550px",
+                aspectRatio: isMobile ? (showMobileEmbed ? "1/1.414" : "auto") : "1 / 1.414",
                 backgroundColor: "var(--surface)",
                 borderRadius: "0.75rem",
               }}
             >
               {isMobile ? (
-                <div className="flex flex-col items-center justify-center p-8 text-center h-full gap-4">
-                  <div 
-                    className="p-4 rounded-full mb-2"
-                    style={{ background: "var(--primary)", color: "var(--background)", opacity: 0.8 }}
-                  >
-                    <BookOpen size={40} />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <h3 className="font-bold text-lg">Ready to Read</h3>
-                    <p className="text-xs opacity-70">
-                      Mobile browsers work best when opening PDFs in a specialized viewer or new tab.
-                    </p>
-                  </div>
-                  <div className="flex flex-col w-full gap-2 mt-2">
-                    <a
-                      href={pdfBlobUrl || book.pdf_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold transition-all active:scale-95 shadow-md"
-                      style={{ background: "var(--secondary)", color: "var(--background)" }}
-                    >
-                      Open PDF Reader
-                    </a>
-                    {isFromCache && (
-                        <p className="text-[10px] font-bold opacity-50 uppercase tracking-tighter">
-                            Using offline copy
+                <>
+                  {showMobileEmbed ? (
+                    <div className="absolute inset-0 z-50 flex flex-col bg-white">
+                      <div className="flex items-center justify-between px-4 py-2 bg-(--surface) border-b border-(--border)">
+                        <span className="text-xs font-bold opacity-60">Mobile Reader (via Google)</span>
+                        <button 
+                          onClick={() => setShowMobileEmbed(false)}
+                          className="px-3 py-1 rounded-lg text-xs font-bold transition-all active:scale-90"
+                          style={{ background: "var(--primary)", color: "var(--background)" }}
+                        >
+                          Close
+                        </button>
+                      </div>
+                      <iframe
+                        src={`https://docs.google.com/viewer?url=${encodeURIComponent(book.pdf_url)}&embedded=true`}
+                        width="100%"
+                        height="100%"
+                        title="Mobile PDF Viewer"
+                        className="flex-1 w-full h-full border-0"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-8 text-center h-full gap-4">
+                      <div 
+                        className="p-4 rounded-full mb-2"
+                        style={{ background: "var(--primary)", color: "var(--background)", opacity: 0.8 }}
+                      >
+                        <BookOpen size={40} />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <h3 className="font-bold text-lg">Ready to Read</h3>
+                        <p className="text-xs opacity-70">
+                          View the PDF directly here or open it in a new tab.
                         </p>
-                    )}
-                  </div>
-                </div>
+                      </div>
+                      <div className="flex flex-col w-full gap-2 mt-2">
+                        <button
+                          onClick={() => setShowMobileEmbed(true)}
+                          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold transition-all active:scale-95 shadow-md"
+                          style={{ background: "var(--secondary)", color: "var(--background)" }}
+                        >
+                          Open PDF Reader
+                        </button>
+                        <a
+                          href={pdfBlobUrl || book.pdf_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] py-1 font-bold opacity-50 uppercase tracking-tighter"
+                        >
+                            Open in New Tab
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <>
                   <object
