@@ -597,7 +597,7 @@ const ChatSection = ({ bookId, onClose }) => {
                     disabled={(!input.trim() && !selectedImage) || isSending}
                     onClick={sendMessage}
                     className="p-2.5 rounded-xl transition-all shadow-md active:scale-90 flex items-center justify-center disabled:opacity-50"
-                    style={{ background: "var(--primary)", color: "var(--background)" }}
+                    style={{ background: "var(--primary)", color: "var(--text-muted)" }}
                 >
                     {isSending ? (
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
