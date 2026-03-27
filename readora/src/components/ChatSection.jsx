@@ -88,9 +88,14 @@ const ChatSection = ({ bookId, onClose }) => {
   }, [messages, typingUser, showSettings, page]);
 
   useEffect(() => {
-    const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
-    const host = window.location.hostname === "localhost" ? "localhost:8000" : window.location.host;
-    const wsUrl = `${protocol}${host}/ws/chat/${bookId}/`;
+    let wsUrl;
+    if (import.meta.env.VITE_WS_URL) {
+      wsUrl = `${import.meta.env.VITE_WS_URL}/ws/chat/${bookId}/`;
+    } else {
+      const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+      const host = window.location.hostname === "localhost" ? "localhost:8000" : window.location.host;
+      wsUrl = `${protocol}${host}/ws/chat/${bookId}/`;
+    }
     
     const ws = new WebSocket(wsUrl);
 

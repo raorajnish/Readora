@@ -22,8 +22,7 @@ DEBUG = os.environ.get("DEBUG", "True") == "True"
 if DEBUG:
     ALLOWED_HOSTS = ['*']
 else:
-    allowed_hosts_env = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1")
-    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(",") if host.strip()]
+    ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "readora-backend-u917.onrender.com,localhost,127.0.0.1").split(",")
 
 
 INSTALLED_APPS = [
@@ -48,6 +47,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -112,9 +112,17 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# CORS (dev only - allow all)
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS & CSRF
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
+    FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://readora-seven.vercel.app")
+    CORS_ALLOWED_ORIGINS = [FRONTEND_URL]
+    CSRF_TRUSTED_ORIGINS = [FRONTEND_URL]
 
 # REST Framework
 REST_FRAMEWORK = {
@@ -159,6 +167,33 @@ AUTH_USER_MODEL = 'accounts.User'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
+# --- PRODUCTION SECURITY SETTINGS ---
+# These settings activate automatically when DEBUG=False on Render
+if not DEBUG:
+    # 1. Force HTTPS
+    SECURE_SSL_REDIRECT = True
+    # Required for Render (tells Django it is behind a proxy)
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    
+    # 2. Secure Cookies (Only sent over HTTPS)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # 3. HTTP Strict Transport Security (HSTS)
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # 4. Protection against common attacks
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    
+    # Security Warning for SECRET_KEY
+    if SECRET_KEY.startswith('django-insecure'):
+        print("WARNING: You are using the fallback insecure SECRET_KEY in production!")
+    if '*' in ALLOWED_HOSTS:
+        print("WARNING: ALLOWED_HOSTS contains '*' in production!")
 
 print("DEBUG:", DEBUG)
 print("ALLOWED_HOSTS:", ALLOWED_HOSTS)
