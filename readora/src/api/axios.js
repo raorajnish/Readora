@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+export const BACKEND_URL = 'https://readora-backend-u917.onrender.com';
+export const BACKEND_HOST = 'readora-backend-u917.onrender.com';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+  baseURL: `${BACKEND_URL}/api`,
   headers: { 'Content-Type': 'application/json' },
 });
 

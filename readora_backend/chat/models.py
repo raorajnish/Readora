@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 
-User = settings.AUTH_USER_MODEL
+# User model is referenced via settings.AUTH_USER_MODEL in ForeignKeys below
 
 
 class Message(models.Model):

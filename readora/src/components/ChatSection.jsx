@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { MessageSquare, Settings, X, Plus, Send, MoreVertical, Smile, Navigation, Copy, Trash2, Reply } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import api from "../api/axios";
+import api, { BACKEND_HOST } from "../api/axios";
 import Toast from "./Toast";
 
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
@@ -88,14 +88,9 @@ const ChatSection = ({ bookId, onClose }) => {
   }, [messages, typingUser, showSettings, page]);
 
   useEffect(() => {
-    let wsUrl;
-    if (import.meta.env.VITE_WS_URL) {
-      wsUrl = `${import.meta.env.VITE_WS_URL}/ws/chat/${bookId}/`;
-    } else {
-      const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
-      const host = window.location.hostname === "localhost" ? "localhost:8000" : window.location.host;
-      wsUrl = `${protocol}${host}/ws/chat/${bookId}/`;
-    }
+    // Use the hardcoded BACKEND_HOST for WebSockets
+    const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+    const wsUrl = `${protocol}${BACKEND_HOST}/ws/chat/${bookId}/`;
     
     const ws = new WebSocket(wsUrl);
 

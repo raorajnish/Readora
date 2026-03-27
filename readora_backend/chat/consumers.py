@@ -5,7 +5,7 @@ from django.core.cache import cache
 from .models import Message, Reaction
 from django.contrib.auth import get_user_model
 
-User = get_user_model()
+# User model will be resolved inside methods to avoid early settings access
 
 class ChatConsumer(AsyncWebsocketConsumer):
 
@@ -176,6 +176,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @sync_to_async
     def save_message(self, sender_id, content, media_url, reply_to_id=None):
+        User = get_user_model()
         user = User.objects.get(id=sender_id)
         msg = Message.objects.create(
             book_id=self.book_id,
@@ -203,6 +204,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @sync_to_async
     def save_reaction(self, message_id, user_id, emoji):
+        User = get_user_model()
         user = User.objects.get(id=user_id)
         Reaction.objects.update_or_create(
             message_id=message_id,
