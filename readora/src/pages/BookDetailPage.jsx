@@ -38,6 +38,16 @@ const BookDetailPage = () => {
   const [isFromCache, setIsFromCache] = useState(false);
   const { getCachedPdf, cachePdf } = useAssetCache();
   const pdfContainerRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent));
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const enterFullScreen = async () => {
     try {
@@ -68,7 +78,8 @@ const BookDetailPage = () => {
             setPdfBlobUrl(cachedUrl);
             setIsFromCache(true);
           } else {
-            // Load fresh and cache for future
+            // Not from cache, try fresh download
+            setIsFromCache(false);
             const newUrl = await cachePdf(bookData.pdf_url);
             if (newUrl) setPdfBlobUrl(newUrl);
           }
@@ -351,66 +362,95 @@ const BookDetailPage = () => {
             </div>
             <div
               ref={pdfContainerRef}
-              className="relative w-full"
+              className="relative w-full overflow-hidden"
               style={{
-                paddingBottom: "141.4%",
-                minHeight: "550px",
-                width: "100%",
-                maxWidth: "100%",
+                minHeight: isMobile ? "200px" : "550px",
+                aspectRatio: isMobile ? "auto" : "1 / 1.414",
                 backgroundColor: "var(--surface)",
                 borderRadius: "0.75rem",
-                overflow: "hidden",
               }}
             >
-              <object
-                data={pdfBlobUrl || book.pdf_url}
-                type="application/pdf"
-                width="100%"
-                height="100%"
-                className="rounded-xl bg-white"
-                aria-label={`PDF for ${book.title}`}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                  border: "1px solid var(--border)",
-                }}
-                onError={() => setPdfLoadFailed(true)}
-              >
-                <p>
-                  PDF preview not available.{" "}
-                  <a
-                    href={book.pdf_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+              {isMobile ? (
+                <div className="flex flex-col items-center justify-center p-8 text-center h-full gap-4">
+                  <div 
+                    className="p-4 rounded-full mb-2"
+                    style={{ background: "var(--primary)", color: "var(--background)", opacity: 0.8 }}
                   >
-                    Open PDF in new tab
-                  </a>
-                  .
-                </p>
-              </object>
-              {pdfLoadFailed && (
+                    <BookOpen size={40} />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <h3 className="font-bold text-lg">Ready to Read</h3>
+                    <p className="text-xs opacity-70">
+                      Mobile browsers work best when opening PDFs in a specialized viewer or new tab.
+                    </p>
+                  </div>
+                  <div className="flex flex-col w-full gap-2 mt-2">
+                    <a
+                      href={pdfBlobUrl || book.pdf_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold transition-all active:scale-95 shadow-md"
+                      style={{ background: "var(--secondary)", color: "var(--background)" }}
+                    >
+                      Open PDF Reader
+                    </a>
+                    {isFromCache && (
+                        <p className="text-[10px] font-bold opacity-50 uppercase tracking-tighter">
+                            Using offline copy
+                        </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <object
+                    data={pdfBlobUrl || book.pdf_url}
+                    type="application/pdf"
+                    width="100%"
+                    height="100%"
+                    className="rounded-xl bg-white"
+                    aria-label={`PDF for ${book.title}`}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%",
+                      border: "1px solid var(--border)",
+                    }}
+                    onError={() => setPdfLoadFailed(true)}
+                  >
+                    <p className="p-10 text-center">
+                      PDF preview not available.{" "}
+                      <a
+                        href={book.pdf_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "var(--secondary)", textDecoration: "underline" }}
+                      >
+                        Open PDF in new tab
+                      </a>
+                      .
+                    </p>
+                  </object>
+                </>
+              )}
+              
+              {pdfLoadFailed && !isMobile && (
                 <div
-                  className="mt-3 p-3 rounded-xl"
-                  style={{
-                    background: "var(--surface)",
-                    border: "1px solid var(--danger)",
-                  }}
+                  className="absolute inset-0 flex flex-col items-center justify-center p-6 bg-(--surface) z-10"
                 >
-                  <p className="text-sm" style={{ color: "var(--danger)" }}>
-                    PDF preview failed to load (Cloudinary resource may require
-                    signed delivery). Use the direct link below.
+                  <p className="text-sm mb-4 text-center" style={{ color: "var(--danger)" }}>
+                    PDF failed to load inside the browser.
                   </p>
                   <a
                     href={book.pdf_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-semibold"
-                    style={{ color: "var(--secondary)" }}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold transition-all shadow-md"
+                    style={{ background: "var(--secondary)", color: "var(--background)" }}
                   >
-                    Open PDF directly
+                    Open Externally
                   </a>
                 </div>
               )}
